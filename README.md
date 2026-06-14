@@ -9,6 +9,7 @@ REST API for storing transactions in memory and querying them by type or transit
 - [Challenge specification](docs/challenge-prd.md) *(original, Spanish)*
 - [Execution plan](docs/plan.md)
 - [Technical design](docs/design.md)
+- [In-memory repository concurrency](docs/technical/in-memory-repository-concurrency.md)
 
 ## Stack
 

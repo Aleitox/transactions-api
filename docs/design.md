@@ -78,7 +78,7 @@ flowchart TD
     Client -->|"PUT/GET"| Controller
     Controller --> Service
     Service --> Repo
-    Repo -->|"ConcurrentHashMap"| Store[(InMemoryStore)]
+    Repo -->|"HashMap + ReadWriteLock"| Store[(InMemoryStore)]
 ```
 
 ### Package structure
@@ -101,10 +101,14 @@ com.aleitox.transactions/
 
 ## In-memory persistence
 
-Primary store:
+Implementation: `InMemoryTransactionRepository` (`infrastructure`).
+
+Primary store and indexes use `HashMap`, guarded by a `ReentrantReadWriteLock`. See [in-memory repository concurrency](technical/in-memory-repository-concurrency.md) for the full rationale.
 
 ```java
-ConcurrentHashMap<Long, Transaction> transactions
+Map<Long, Transaction> transactions
+Map<String, Set<Long>> byType
+Map<Long, List<Long>> childrenByParent
 ```
 
 Auxiliary indexes (updated on every `PUT`):
@@ -114,7 +118,7 @@ Auxiliary indexes (updated on every `PUT`):
 | `byType` | `Map<String, Set<Long>>` | `GET /transactions/types/{type}` |
 | `childrenByParent` | `Map<Long, List<Long>>` | `GET /transactions/sum/{id}` |
 
-On upsert with a different `type` or `parent_id`, recalculate both indexes for the affected transaction.
+On upsert, indexes are updated only when `type` or `parent_id` actually changes (skipping index work when only `amount` changes).
 
 `byType` keys always use the canonical lowercase `type` (never mixed-case variants).
 
@@ -122,13 +126,13 @@ On upsert with a different `type` or `parent_id`, recalculate both indexes for t
 
 ## Transitive sum algorithm
 
-For `GET /sum/{id}`:
+For `GET /sum/{id}`, the repository exposes `sumTransitive(long id)`:
 
 1. Verify the root transaction exists.
-2. Traverse descendants using `childrenByParent` (BFS or DFS).
+2. Traverse descendants using `childrenByParent` (BFS).
 3. Sum `amount` of the root + all descendants.
 
-Complexity: O(number of descendants), without scanning the entire store.
+The traversal and sum run under a single read lock. Complexity: O(number of descendants), without scanning the entire store.
 
 ---
 
