@@ -1,5 +1,8 @@
 package com.aleitox.transactions.api;
 
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +30,12 @@ public class TransactionController {
 		String normalizedType = TransactionTypeNormalizer.normalize(request.type());
 		transactionService.save(id, request.amount(), normalizedType, request.parentId());
 		return new StatusResponse("ok");
+	}
+
+	@GetMapping("/types/{type}")
+	public List<Long> getTypesByType(@PathVariable String type) {
+		String normalizedType = TransactionTypeNormalizer.normalize(type);
+		return transactionService.findIdsByType(normalizedType);
 	}
 
 }
