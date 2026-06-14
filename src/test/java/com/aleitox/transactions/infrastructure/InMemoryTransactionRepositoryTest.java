@@ -1,10 +1,12 @@
 package com.aleitox.transactions.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.aleitox.transactions.domain.InvalidParentException;
 import com.aleitox.transactions.domain.Transaction;
 
 class InMemoryTransactionRepositoryTest {
@@ -120,6 +122,49 @@ class InMemoryTransactionRepositoryTest {
 		assertThat(repository.sumTransitive(10)).contains(20000.0);
 		assertThat(repository.sumTransitive(11)).contains(15000.0);
 		assertThat(repository.sumTransitive(12)).contains(5000.0);
+	}
+
+	@Test
+	void save_throwsWhenParentDoesNotExist() {
+		assertThatThrownBy(() -> repository.save(new Transaction(11, 100, "a", 10L)))
+				.isInstanceOf(InvalidParentException.class)
+				.hasMessageContaining("Parent does not exist");
+
+		assertThat(repository.findById(11)).isEmpty();
+	}
+
+	@Test
+	void save_throwsOnSelfParent() {
+		repository.save(new Transaction(10, 100, "a", null));
+
+		assertThatThrownBy(() -> repository.save(new Transaction(10, 100, "a", 10L)))
+				.isInstanceOf(InvalidParentException.class)
+				.hasMessageContaining("Cycle detected");
+
+		assertThat(repository.findById(10)).contains(new Transaction(10, 100, "a", null));
+	}
+
+	@Test
+	void save_throwsOnCycle() {
+		repository.save(new Transaction(10, 100, "a", null));
+		repository.save(new Transaction(11, 100, "b", 10L));
+
+		assertThatThrownBy(() -> repository.save(new Transaction(10, 100, "a", 11L)))
+				.isInstanceOf(InvalidParentException.class)
+				.hasMessageContaining("Cycle detected");
+
+		assertThat(repository.findById(10)).contains(new Transaction(10, 100, "a", null));
+	}
+
+	@Test
+	void save_doesNotUpdateIndexesWhenValidationFails() {
+		repository.save(new Transaction(10, 100, "a", null));
+
+		assertThatThrownBy(() -> repository.save(new Transaction(11, 100, "b", 99L)))
+				.isInstanceOf(InvalidParentException.class);
+
+		assertThat(repository.findIdsByType("b")).isEmpty();
+		assertThat(repository.findChildrenIds(10)).isEmpty();
 	}
 
 }

@@ -2,6 +2,7 @@
 
 Design decisions for the transactions REST service.
 Full specification in [`challenge-prd.md`](challenge-prd.md). Roadmap in [`plan.md`](plan.md).
+Implementation how-to (TDD, DTOs, validation) in [`implementation-conventions.md`](implementation-conventions.md).
 
 **Stack:** Java 21 + Spring Boot 3.x + Gradle
 
@@ -93,7 +94,7 @@ com.aleitox.transactions/
 
 ### SOLID principles applied
 
-- **SRP:** controller handles HTTP only; service handles logic only; repository handles persistence only.
+- **SRP:** controller handles HTTP only; service orchestrates use cases; repository handles persistence and atomic hierarchy validation on `save`.
 - **DIP:** `TransactionService` depends on a `TransactionRepository` interface, not the concrete implementation.
 - **OCP:** add another storage backend (Redis, etc.) without touching the service.
 
@@ -122,6 +123,8 @@ On upsert, indexes are updated only when `type` or `parent_id` actually changes 
 
 `byType` keys always use the canonical lowercase `type` (never mixed-case variants).
 
+Before any index mutation, `save()` runs `TransactionHierarchyRules.validateParent()` under the write lock (parent exists, no cycle). Rules live in `domain/`; the repository orchestrates validate-then-persist atomically. See [in-memory repository concurrency](technical/in-memory-repository-concurrency.md).
+
 ---
 
 ## Transitive sum algorithm
@@ -149,6 +152,8 @@ Centralized `@RestControllerAdvice` for consistent JSON responses.
 
 ## Testing strategy
 
+Step-by-step TDD workflow and test conventions: [`implementation-conventions.md`](implementation-conventions.md).
+
 ### Integration tests (required)
 
 `@SpringBootTest` + `MockMvc`, covering:
@@ -162,7 +167,7 @@ Centralized `@RestControllerAdvice` for consistent JSON responses.
 
 ### Unit tests (optional, valued)
 
-Service isolated with a mocked repository for cycle validation and business rules.
+Service isolated with a mocked repository for use-case orchestration. Hierarchy rules are covered by `TransactionHierarchyRulesTest` and repository tests.
 
 ### Approach
 

@@ -5,12 +5,13 @@
 **Documentation in the repo:**
 
 
-| File                    | Purpose                                                          |
-| ----------------------- | ---------------------------------------------------------------- |
-| `README.md`             | Repo entry point (initial stub; completed after implementation)  |
-| `docs/challenge-prd.md` | Original challenge specification (PRD)                           |
-| `docs/plan.md`          | Execution plan (roadmap, phases, acceptance criteria)            |
-| `docs/design.md`        | Technical design decisions (API rules, architecture, algorithms) |
+| File                                    | Purpose                                                          |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `README.md`                             | Repo entry point (initial stub; completed after implementation)  |
+| `docs/challenge-prd.md`                 | Original challenge specification (PRD)                           |
+| `docs/plan.md`                          | Execution plan (roadmap, phases, acceptance criteria)            |
+| `docs/design.md`                        | Technical design decisions (API rules, architecture, algorithms) |
+| `docs/implementation-conventions.md`    | How to implement endpoints with TDD (DTOs, validation, errors)   |
 
 
 ---
@@ -119,6 +120,8 @@ Incremental development with small commits and clear messages.
 **Commit:** `feat: add domain model and in-memory repository`
 
 ### Phase 2.3 — PUT /transactions/{id} (TDD)
+
+Follow [`implementation-conventions.md`](implementation-conventions.md).
 
 1. Write integration test with the base example (3 PUTs → **200 OK** + `{ "status": "ok" }`).
 2. Implement `TransactionController`, request DTO, `TransactionService.save()`.
