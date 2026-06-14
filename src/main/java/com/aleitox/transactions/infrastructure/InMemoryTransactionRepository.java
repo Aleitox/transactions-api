@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.springframework.stereotype.Repository;
 
 import com.aleitox.transactions.domain.Transaction;
+import com.aleitox.transactions.domain.TransactionHierarchyRules;
 import com.aleitox.transactions.domain.TransactionRepository;
 
 @Repository
@@ -29,6 +30,9 @@ public class InMemoryTransactionRepository implements TransactionRepository {
 	public void save(Transaction transaction) {
 		lock.writeLock().lock();
 		try {
+			TransactionHierarchyRules.validateParent(
+					transactions, transaction.id(), transaction.parentId());
+
 			Transaction previous = transactions.get(transaction.id());
 
 			if (previous != null) {

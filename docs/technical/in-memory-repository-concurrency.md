@@ -80,11 +80,13 @@ findById(11)          → read lock, then release
 
 Each call sees a valid snapshot on its own, but the two results may come from different moments in time. That is why `sumTransitive` does the full traversal in a single call.
 
-**Business rules live in the service layer.** A `PUT` may need to check that `parent_id` exists or that the hierarchy would not form a cycle before calling `save`. Those checks are separate repository calls, for example:
+**Hierarchy validation runs inside `save` under the write lock.** Parent existence and cycle checks use `TransactionHierarchyRules` (domain) against the current map snapshot, then persistence and index updates happen in the same critical section — analogous to FK / cycle constraints evaluated inside a SQL transaction. The service does not re-validate; it delegates to `repository.save()`.
 
 ```
-exists(parentId)   → read lock, then release
 save(transaction)  → write lock
+  validate parent + no cycle (domain rules on current snapshot)
+  update indexes + put
+  → release
 ```
 
-Another request could change the store between `exists` and `save`. Preventing that kind of race is the service’s responsibility (or a future composite operation), not the repository’s. The repository is deliberately limited to thread-safe persistence; validation stays in the service by design (SRP).
+No other thread can mutate the store between validation and persistence.
