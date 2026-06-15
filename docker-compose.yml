@@ -1,0 +1,6 @@
+services:
+  transactions:
+    build: .
+    image: transactions
+    ports:
+      - "8080:8080"
