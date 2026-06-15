@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.aleitox.transactions.domain.Transaction;
+import com.aleitox.transactions.domain.TransactionNotFoundException;
 import com.aleitox.transactions.domain.TransactionRepository;
 
 @Service
@@ -22,6 +23,11 @@ public class TransactionService {
 
 	public List<Long> findIdsByType(String normalizedType) {
 		return repository.findIdsByType(normalizedType);
+	}
+
+	public double sumTransitive(long id) {
+		return repository.sumTransitive(id)
+				.orElseThrow(() -> new TransactionNotFoundException(id));
 	}
 
 }

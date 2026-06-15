@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.aleitox.transactions.api.dto.PutTransactionRequest;
 import com.aleitox.transactions.api.dto.StatusResponse;
+import com.aleitox.transactions.api.dto.SumResponse;
 import com.aleitox.transactions.application.TransactionService;
 
 import jakarta.validation.Valid;
@@ -36,6 +37,11 @@ public class TransactionController {
 	public List<Long> getTypesByType(@PathVariable String type) {
 		String normalizedType = TransactionTypeNormalizer.normalize(type);
 		return transactionService.findIdsByType(normalizedType);
+	}
+
+	@GetMapping("/sum/{id}")
+	public SumResponse getSum(@PathVariable long id) {
+		return new SumResponse(transactionService.sumTransitive(id));
 	}
 
 }
