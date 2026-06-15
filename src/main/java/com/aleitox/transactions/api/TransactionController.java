@@ -43,5 +43,4 @@ public class TransactionController {
 	public SumResponse getSum(@PathVariable long id) {
 		return new SumResponse(transactionService.sumTransitive(id));
 	}
-
 }
